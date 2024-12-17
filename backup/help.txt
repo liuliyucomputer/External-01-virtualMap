@@ -1,0 +1,102 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+from functools import partial
+
+# 创建图
+G = nx.Graph()
+
+# 添加建筑物节点
+buildings = [
+    "宿舍楼A", "宿舍楼B", "宿舍楼C", "D食堂",
+    "宿舍楼D", "宿舍楼E", "宿舍楼F", "F食堂",
+    "教学楼G", "教学楼H", "教学楼I", "教学楼J"
+]
+
+G.add_nodes_from(buildings)
+
+# 添加路径（边），示例数据
+edges = [
+    ("宿舍楼A", "D食堂", {"capacity": 10, "length": 100, "difficulty": 1}),
+    ("宿舍楼B", "D食堂", {"capacity": 10, "length": 100, "difficulty": 1}),
+    ("宿舍楼C", "D食堂", {"capacity": 10, "length": 100, "difficulty": 1}),
+    ("宿舍楼D", "F食堂", {"capacity": 10, "length": 100, "difficulty": 1}),
+    ("宿舍楼E", "F食堂", {"capacity": 10, "length": 100, "difficulty": 1}),
+    ("宿舍楼F", "F食堂", {"capacity": 10, "length": 100, "difficulty": 1}),
+    ("D食堂", "教学楼G", {"capacity": 10, "length": 200, "difficulty": 2}),
+    ("F食堂", "教学楼G", {"capacity": 10, "length": 200, "difficulty": 2}),
+    ("教学楼G", "教学楼H", {"capacity": 10, "length": 150, "difficulty": 1}),
+    ("教学楼H", "教学楼I", {"capacity": 10, "length": 150, "difficulty": 1}),
+    ("教学楼I", "教学楼J", {"capacity": 10, "length": 150, "difficulty": 1}),
+    # 添加更多路径
+]
+
+G.add_edges_from(edges)
+
+# 定义学生类
+class Student:
+    def __init__(self, name, building):
+        self.name = name
+        self.building = building
+        self.path = []
+
+    def move_to(self, destination):
+        self.path = nx.dijkstra_path(G, self.building, destination, weight='length')
+        self.building = destination
+
+# 定义班级
+class Class:
+    def __init__(self, name, students):
+        self.name = name
+        self.students = students
+        self.schedule = {}
+
+    def add_schedule(self, time, destination):
+        self.schedule[time] = destination
+
+    def move_students(self, time):
+        if time in self.schedule:
+            destination = self.schedule[time]
+            for student in self.students:
+                student.move_to(destination)
+
+# 创建学生
+students = [
+    Student("Alice", "宿舍楼A"),
+    Student("Bob", "宿舍楼B"),
+    Student("Charlie", "宿舍楼C"),
+    Student("David", "宿舍楼D"),
+    Student("Eva", "宿舍楼E"),
+    Student("Frank", "宿舍楼F"),
+    # 添加更多学生
+]
+
+# 创建班级
+classes = [
+    Class("Class1", students[:2]),
+    Class("Class2", students[2:4]),
+    Class("Class3", students[4:6]),
+    # 添加更多班级
+]
+
+# 设置课程表
+classes[0].add_schedule("9:00", "教学楼G")
+classes[0].add_schedule("12:00", "D食堂")
+classes[1].add_schedule("9:00", "教学楼H")
+classes[1].add_schedule("12:00", "F食堂")
+classes[2].add_schedule("9:00", "教学楼I")
+classes[2].add_schedule("12:00", "D食堂")
+
+# 模拟时间
+times = ["9:00", "12:00"]
+for time in times:
+    for class_ in classes:
+        class_.move_students(time)
+
+# 绘制地图
+pos = nx.spring_layout(G)
+nx.draw(G, pos, with_labels=True, node_size=700, node_color="lightblue", font_size=10)
+plt.show()
+
+# 显示学生路径
+for student in students:
+    print(f"{student.name}: {' -> '.join(student.path)}")
