@@ -69,7 +69,23 @@ class Student:
         self.destination: Optional[Point] = None
         self.current_path: Optional[List[Path]] = None
         self.move_start_time: Optional[float] = None
+    def update_destination(self, current_time: float, buildings: Dict[str, Point]):
+        """更新目的地"""
+        if not self.schedule:
+            return
 
+        # 检查当前时间是否到了课程结束时间
+        current_time_str = time.strftime("%H:%M", time.localtime(current_time))
+        for subject in self.schedule:
+            subject_end_time = ...  # 获取该课程的结束时间
+            if current_time_str >= subject_end_time:
+                # 切换到下一个课程
+                self.schedule.pop(0)
+                if self.schedule:
+                    self.destination = buildings.get(self.schedule[0])
+                    self.current_path = self.find_shortest_path(self.position, self.destination)
+                    self.move_start_time = current_time
+                break
     def update_position(self, current_time: float):
         """更新学生位置"""
         if not (self.current_path and self.move_start_time):
@@ -202,7 +218,7 @@ class Game:
         self.virtual_time += 1  # 每次更新加一秒
         for student in self.students:
             student.update_position(self.virtual_time)
-
+            student.update_destination(self.virtual_time, self.buildings)  # 调用更新目的地的方法
     def draw_buildings(self):
         """绘制建筑物及其名称"""
         for building_name, point in self.buildings.items():

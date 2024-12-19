@@ -23,8 +23,8 @@ WHITE = (255, 255, 255)
 ORANGE = (190, 0, 200)
 
 # 虚拟时间初始设定
-VIRTUAL_START_HOUR = 9  # 学生晚上9:30
-VIRTUAL_START_MINUTE =15
+VIRTUAL_START_HOUR = 21  # 学生晚上9:30
+VIRTUAL_START_MINUTE = 30
 VIRTUAL_START_SECOND = 0
 
 
@@ -65,37 +65,39 @@ class Path:
 
 
 class Student:
-    def __init__(self, student_id: int, name: str, class_name: str, dormitory: str, buildings: Dict[str, Point], paths: List[Path], subjects: List[dict], class_content: str):
+    def __init__(self, student_id: int, name: str, class_name: str, dormitory: str, buildings: Dict[str, Point], paths: List[Path]):
         self.id = student_id
         self.name = name
         self.class_name = class_name
         self.dormitory = dormitory
         self.buildings = buildings
         self.paths = paths
-        self.subjects = subjects
         self.schedule: List[Tuple[int, int, str, int]] = []  # (小时, 分钟, 地点, 花费时间)
         self.position: Optional[Point] = buildings[dormitory]  # 初始化位置为宿舍
         self.current_time: int = VIRTUAL_START_HOUR * 3600 + VIRTUAL_START_MINUTE * 60 + VIRTUAL_START_SECOND  # 初始化虚拟时间
         self.current_schedule_index: int = 0
         self.current_path: List[Path] = []  # 当前路径
         self.move_start_time: Optional[float] = None
-        self.class_content = class_content.split('-')  # 解析班级内容为地点列表
         self.generate_schedule()
-        
+
     def generate_schedule(self):
         """生成日常活动安排"""
-        for event in self.class_content:
-            for subject in self.subjects:
-                if event == subject['building']:
-                    start_hour, start_minute = map(int, subject['start_time'].split(':'))
-                    end_hour, end_minute = map(int, subject['end_time'].split(':'))
-                    duration = (end_hour * 3600 + end_minute * 60) - (start_hour * 3600 + start_minute * 60)
-                    self.schedule.append((start_hour, start_minute, subject['building'], duration // 60))
-        self.schedule.append((20, 30, self.dormitory, 30))  # 返回宿舍
+        self.schedule = [
+            (7, 0, random.choice(["CanteenD5", "CanteenF5", "MD"]), 20),  # 三个地方任选其一
+            (8, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 100),  # 第一节课
+            (10, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 60),  # 第二节课
+            (11, 40, random.choice(["CanteenD5", "CanteenF5", "MD"]), 20),  # 午餐
+            (12, 0, self.dormitory, 60),  # 回宿舍
+            (14, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 100),  # 第三节课
+            (16, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 100),  # 第四节课
+            (18, 0, random.choice(["CanteenD5", "CanteenF5", "MD"]), 20),  # 晚餐
+            (20, 30, self.dormitory, 30)  # 返回宿舍
+        ]
 
     def find_shortest_path(self, start: Point, end: Point) -> List[Path]:
         if start == end:
             return []
+
         graph = {point: [] for path in self.paths for point in [path.start, path.end]}
         for path in self.paths:
             graph[path.start].append((path.end, path))
@@ -132,27 +134,22 @@ class Student:
 
             # 检查是否达到了计划时间并找到路径
             if current_time >= scheduled_timestamp:
-                if self.position == self.buildings[scheduled_building]:
-                    end_hour = scheduled_hour + duration
-                    end_timestamp = end_hour * 3600 + scheduled_minute * 60
-
-                    if current_time < end_timestamp:
-                        return  # 若还在课程结束前，直接返回
-
                 if not self.current_path:  # 如果没有当前路径，开始寻找新路径
                     self.current_path = self.find_shortest_path(self.position, self.buildings[scheduled_building])
                     if self.current_path:
                         self.move_start_time = current_time  # 记录移动开始时间
 
+                # 移动逻辑
                 if self.current_path:  # 只在有路径时更新位置
                     path = self.current_path[0]  # 当前路径段
                     progress = min(1.0, (current_time - self.move_start_time) / path.time_cost)
 
+                    # 更新位置
                     self.position = Point(
                         path.start.x + (path.end.x - path.start.x) * smooth_step(progress),
                         path.start.y + (path.end.y - path.start.y) * smooth_step(progress)
                     )
-                    print(f"当前虚拟时间: {current_time}, 计划时间: {scheduled_timestamp}, 建筑物: {scheduled_building}")  # 调试信息
+
                     if progress >= 1.0:  # 如果当前路径段已完成
                         self.current_path.pop(0)  # 移除已完成的路径段
                         if not self.current_path:  # 如果路径段已全部完成
@@ -207,16 +204,13 @@ class Game:
                         path_data['length'], path_data['time_cost']
                     ))
                 for student_data in data.get('students', []):
-                    class_content = next((cls['content'] for cls in data["class"] if cls["class_name"] == student_data["class_name"]), "")
                     student = Student(
                         student_data['id'],
                         student_data['name'],
                         student_data['class_name'],
                         student_data['dormitory'],
                         self.buildings,
-                        self.paths,
-                        data.get('subjects', []),  # 传递科目数据
-                        class_content  # 班级内容
+                        self.paths
                     )
                     self.students.append(student)
 
@@ -248,11 +242,7 @@ class Game:
 
     def draw_time(self):
         """显示当前虚拟时间"""
-        hours = (self.virtual_time // 3600) % 24  # 实时计算小时
-        minutes = (self.virtual_time % 3600) // 60  # 实时计算分钟
-        seconds = self.virtual_time % 60  # 实时计算秒
-
-        time_str = f"{hours:02}:{minutes:02}:{seconds:02}"
+        time_str = time.strftime("%H:%M:%S", time.localtime(self.virtual_time))
         text = self.font.render(time_str, True, YELLOW)
         text_rect = text.get_rect(topleft=(SCREEN_WIDTH - 150, 20))
         pygame.draw.rect(self.screen, BLACK, text_rect)  # 黑色背景框
