@@ -774,103 +774,87 @@
     "subjects": [
         {
             "id": 1,
-            "name": "数学",
+            "name": "Math",
             "start_time": "16:00",
             "end_time": "17:40",
             "building": "F3c",
-            "time_cost": 6000
+            "time_cost": 6
         },
         {
             "id": 2,
-            "name": "英语",
-<<<<<<< HEAD:001/data.json
+            "name": "Eng",
             "start_time": "7:07",
             "end_time": "7:08",
-=======
-            "start_time": "10:00",
-            "end_time": "11:40",
->>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
             "building": "F3d",
-            "time_cost": 6000
+            "time_cost": 6
         },
          {
             "id": 3,
-<<<<<<< HEAD:001/data.json
             "name": "F3a",
             "start_time": "7:06",
             "end_time": "7:08",
-=======
-            "name": "实验",
-            "start_time": "08:00",
-            "end_time": "09:40",
->>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
             "building": "F3a",
-            "time_cost": 6000
+            "time_cost": 6
         },
         {
             "id": 4,
-            "name": "政治",
+            "name": "zhengzhi",
             "start_time": "14:00",
             "end_time": "15:40",
             "building": "F3b",
-            "time_cost": 6000
+            "time_cost": 6
         },
         {
             "id": 5,
-            "name": "食堂D",
+            "name": "shitangDLau",
             "start_time": "12:05",
             "end_time": "12:06",
             "building": "CanteenD5",
-            "time_cost": 60
+            "time_cost": 6
         },
         {
             "id": 6,
-            "name": "食堂F",
+            "name": "shitangF",
             "start_time": "12:05",
             "end_time": "12:06",
             "building": "CanteenF5",
-            "time_cost": 60
+            "time_cost": 6
         },
         {
             "id": 7,
-            "name": "图书馆",
+            "name": "tushuguan",
             "start_time": "19:30",
             "end_time": "20:50",
             "building": "Library",
-            "time_cost": 4800
+            "time_cost": 4
         },
         {
             "id": 8,
-            "name": "麦当劳",
+            "name": "MD",
             "start_time": "18:05",
             "end_time": "18:30",
             "building": "MD",
-            "time_cost": 1500
+            "time_cost": 15
         },
         {
             "id": 9,
-            "name": "食堂Dam",
-<<<<<<< HEAD:001/data.json
+            "name": "shitangDLauam",
             "start_time": "7:05",
             "end_time": "7:06",
-=======
-            "start_time": "7:15",
-            "end_time": "7:16",
->>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
-            "building": "CanteenD5",
-            "time_cost": 60
+            "building": "F3b",
+            "time_cost": 6
         },
         {
             "id": 10,
-            "name": "食堂Fam",
+            "name": "shitangFam",
             "start_time": "7:05",
             "end_time": "7:06",
             "building": "CanteenF5",
-            "time_cost": 60
+            "time_cost": 6
         },
         {
             "id": 11,
-            "name": "食堂Dev",
+            "name": "shitangDLauev",
             "start_time": "18:15",
             "end_time": "18:35",
             "building": "CanteenD5",
@@ -878,28 +862,27 @@
         },
         {
             "id": 12,
-            "name": "食堂Fev",
+            "name": "shitangFev",
             "start_time": "18:15",
             "end_time": "18:35",
             "building": "CanteenF5",
-            "time_cost": 1200
+            "time_cost": 12
         },
         {
             "id": 13,
-            "name": "麦当劳am",
+            "name": "MDam",
             "start_time": "7:05",
             "end_time": "7:45",
             "building": "MD",
-            "time_cost": 1800
+            "time_cost": 18
         },
         {
             "id": 14,
-            "name": "麦当劳ev",
+            "name": "MDev",
             "start_time": "18:15",
             "end_time": "18:45",
             "building": "MD",
-            "time_cost": 1800
-<<<<<<< HEAD:001/data.json
+            "time_cost": 18
         },
         {
             "id": 16,
@@ -956,35 +939,33 @@
             "end_time": "7:00",
             "building": "F3",
             "time_cost": 32400
-=======
->>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
         }
     ],
     "class": [
         {
             "id": 1,
             "class_name": "一班",
-            "content": "麦当劳am-英语-食堂D-数学-食堂Dev-图书馆-dormitoryD1"
+            "content": "MDam-Eng-shitangDLau-Math-shitangDLauev-tushuguan-dormitoryD1"
         },
         {
             "id": 2,
             "class_name": "二班",
-            "content": "食堂Fam-F3a-食堂F-政治-食堂Fev-图书馆-dormitoryD3"
+            "content": "shitangFam-F3a-shitangF-zhengzhi-shitangFev-tushuguan-dormitoryD3"
         },
          {
             "id": 3,
             "class_name": "三班",
-            "content": "食堂Dam-英语-麦当劳-政治-麦当劳ev-dormitoryF2"
+            "content": "shitangDLauam-Eng-MD-zhengzhi-MDev-dormitoryF2"
         },
          {
             "id": 4,
             "class_name": "四班",
-            "content": "食堂Dam-英语-麦当劳-政治-麦当劳ev-dormitoryF1"
+            "content": "shitangDLauam-Eng-MD-zhengzhi-MDev-dormitoryF1"
         },
          {
             "id": 5,
             "class_name": "五班",
-            "content": "食堂Fam-F3a-麦当劳-政治-麦当劳ev-dormitoryD3"
+            "content": "shitangFam-F3a-MD-zhengzhi-MDev-dormitoryD3"
         }
     ]
 

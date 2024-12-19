@@ -26,7 +26,7 @@ ORANGE = (190, 0, 200)
 
 # 虚拟时间初始设定
 VIRTUAL_START_HOUR = 7  
-VIRTUAL_START_MINUTE = 5
+VIRTUAL_START_MINUTE = 4
 VIRTUAL_START_SECOND = 0
 
 
@@ -105,82 +105,12 @@ class Student:
     def find_shortest_path(self, start: Point, end: Point) -> List[Path]:
         if start == end:
             return []
-
         graph = {point: [] for path in self.paths for point in [path.start, path.end]}
         for path in self.paths:
             graph[path.start].append((path.end, path))
             graph[path.end].append((path.start, Path(path.id, path.end, path.start, path.length, path.time_cost, is_forward=False)))
-
         distances = {start: 0}
-        queue = [(0, id(start), start, [])]  # 使用id()来区分相同坐标的点def update_position(self, current_time: float):
-    """更新学生位置"""
-    if self.current_schedule_index < len(self.schedule):
-        scheduled_start_time = self.schedule[self.current_schedule_index][0]
-        scheduled_end_time = self.schedule[self.current_schedule_index][1]
-        scheduled_building = self.schedule[self.current_schedule_index][2]
-        duration = self.schedule[self.current_schedule_index][3]
-
-        print(f"当前学生 {self.name}，当前虚拟时间: {current_time}，活动开始时间: {scheduled_start_time}，活动结束时间: {scheduled_end_time}")
-
-        # 等待活动开始
-        if current_time < scheduled_start_time:
-            return  # 还没到活动开始时间
-
-        # 活动时间范围内
-        elif scheduled_start_time <= current_time < scheduled_end_time:
-            if self.stay_time_remaining <= 0:
-                # 尝试寻找路径并开始停留
-                self.current_path = self.find_shortest_path(self.position, self.buildings[scheduled_building])
-                if self.current_path:
-                    self.move_start_time = current_time
-                    self.stay_time_remaining = duration
-                    print(f"{self.name} 开始前往 {scheduled_building}")
-                else:
-                    print(f"{self.name} 无法前往 {scheduled_building}")
-                    return
-            else:
-                # 停留状态，减去1秒
-                self.stay_time_remaining -= 1
-                print(f"{self.name} 正在停留，剩余时间: {self.stay_time_remaining}秒")
-                if self.stay_time_remaining <= 0:
-                    # 停留结束，准备进入下一个活动
-                    print(f"{self.name} 停留结束，准备下一个活动")
-                    self.current_schedule_index += 1
-                    if self.current_schedule_index < len(self.schedule):
-                        next_scheduled_building = self.schedule[self.current_schedule_index][2]
-                        self.current_path = self.find_shortest_path(self.position, self.buildings[next_scheduled_building])
-                        if self.current_path:
-                            self.move_start_time = current_time
-                            self.stay_time_remaining = self.schedule[self.current_schedule_index][3]
-                            print(f"{self.name} 查找路径到下一个建筑: {next_scheduled_building}")
-
-        elif current_time >= scheduled_end_time:
-            print(f"{self.name} 活动结束，更新到下一个活动")
-            self.current_schedule_index += 1
-            self.current_path = []
-            self.stay_time_remaining = 0
-
-        # 移动逻辑
-        if self.current_path:
-            path = self.current_path[0]
-            progress = min(1.0, (current_time - self.move_start_time) / path.time_cost)
-            self.position = Point(
-                path.start.x + (path.end.x - path.start.x) * smooth_step(progress),
-                path.start.y + (path.end.y - path.start.y) * smooth_step(progress)
-            )
-            if progress >= 1.0:
-                self.current_path.pop(0)  # 到达当前路径终点
-                if not self.current_path:
-                    # 准备查找下一个活动的路径
-                    print(f"{self.name} 到达 {path.end}，准备查找下一活动")
-                    self.current_schedule_index += 1
-                    if self.current_schedule_index < len(self.schedule):
-                        next_scheduled_building = self.schedule[self.current_schedule_index][2]
-                        self.current_path = self.find_shortest_path(self.position, self.buildings[next_scheduled_building])
-                        if self.current_path:
-                            self.move_start_time = current_time
-                            self.stay_time_remaining = self.schedule[self.current_schedule_index][3]  # 下一个活动的停留时间
-
+        queue = [(0, id(start), start, [])]
         visited = set()
         while queue:
             current_distance, _, current_node, path = heapq.heappop(queue)
@@ -198,75 +128,106 @@ class Student:
         return []
 
     def update_position(self, current_time: float):
-            """更新学生位置"""
-        if self.current_schedule_index < len(self.schedule):
-            scheduled_start_time = self.schedule[self.current_schedule_index][0]
-            scheduled_end_time = self.schedule[self.current_schedule_index][1]
-            scheduled_building = self.schedule[self.current_schedule_index][2]
-            duration = self.schedule[self.current_schedule_index][3]
+        """更新学生位置"""
+        if self.current_schedule_index >= len(self.schedule):
+            return
+            
+        current_activity = self.schedule[self.current_schedule_index]
+        start_time = current_activity[0]
+        end_time = current_activity[1]
+        target_building = current_activity[2]
+        duration = current_activity[3]
+        
+        # 如果当前时间小于活动开始时间，保持等待
+        if current_time < start_time:
+            return
+            
+        # 如果已经到达目标建筑物
+        if self.position == self.buildings[target_building]:
+            if self.stay_time_remaining > 0:
+                self.stay_time_remaining -= 1
+                if self.stay_time_remaining == 0:
+                    # 停留结束，进入下一个活动
+                    self.current_schedule_index += 1
+                    self.current_path = []  # 清空当前路径，准备下一段路程
+                    return
+            return
+    def update_position(self, current_time: float):
+        if self.current_schedule_index >= len(self.schedule):
+            return
+        
+        current_activity = self.schedule[self.current_schedule_index]
+        target_building = current_activity[2]
+        duration = current_activity[3]
 
-            print(f"当前学生 {self.name}，当前虚拟时间: {current_time}，活动开始时间: {scheduled_start_time}，活动结束时间: {scheduled_end_time}")
-
-            # 等待活动开始
-            if current_time < scheduled_start_time:
-                return  # 还没到活动开始时间
-
-            # 活动时间范围内
-            elif scheduled_start_time <= current_time < scheduled_end_time:
-                if self.stay_time_remaining <= 0:
-                    # 尝试寻找路径并开始停留
-                    self.current_path = self.find_shortest_path(self.position, self.buildings[scheduled_building])
-                    if self.current_path:
-                        self.move_start_time = current_time
-                        self.stay_time_remaining = duration
-                        print(f"{self.name} 开始前往 {scheduled_building}")
-                    else:
-                        print(f"{self.name} 无法前往 {scheduled_building}")
-                        return
-                else:
-                    # 停留状态，减去1秒
-                    self.stay_time_remaining -= 1
-                    print(f"{self.name} 正在停留，剩余时间: {self.stay_time_remaining}秒")
-                    if self.stay_time_remaining <= 0:
-                        # 停留结束，准备进入下一个活动
-                        print(f"{self.name} 停留结束，准备下一个活动")
-                        self.current_schedule_index += 1
-                        if self.current_schedule_index < len(self.schedule):
-                            next_scheduled_building = self.schedule[self.current_schedule_index][2]
-                            self.current_path = self.find_shortest_path(self.position, self.buildings[next_scheduled_building])
-                            if self.current_path:
-                                self.move_start_time = current_time
-                                self.stay_time_remaining = self.schedule[self.current_schedule_index][3]
-                                print(f"{self.name} 查找路径到下一个建筑: {next_scheduled_building}")
-
-            elif current_time >= scheduled_end_time:
-                print(f"{self.name} 活动结束，更新到下一个活动")
+        # 如果已经到达目标建筑物
+        if self.position == self.buildings[target_building]:
+            if self.stay_time_remaining > 0:
+                self.stay_time_remaining -= 1
+                return
+            else:
+                # 停留结束，进入下一个活动
                 self.current_schedule_index += 1
-                self.current_path = []
-                self.stay_time_remaining = 0
+                if self.current_schedule_index < len(self.schedule):
+                    next_activity = self.schedule[self.current_schedule_index]
+                    self.stay_time_remaining = next_activity[3]
+                    self.current_path = []
+                return
 
-            # 移动逻辑
+        # 如果还没有路径或路径已完成，需要重新寻路
+        if not self.current_path:
+            self.current_path = self.find_shortest_path(self.position, self.buildings[target_building])
             if self.current_path:
-                path = self.current_path[0]
-                progress = min(1.0, (current_time - self.move_start_time) / path.time_cost)
+                self.move_start_time = current_time
+
+        # 在路上移动
+        if self.current_path:
+            current_path = self.current_path[0]
+            progress = min(1.0, (current_time - self.move_start_time) / current_path.time_cost)
+
+            # 更新位置
+            self.position = Point(
+                current_path.start.x + (current_path.end.x - current_path.start.x) * smooth_step(progress),
+                current_path.start.y + (current_path.end.y - current_path.start.y) * smooth_step(progress)
+            )
+
+            # 如果到达当前路径终点
+            if progress >= 1.0:
+                self.current_path.pop(0)
+                if not self.current_path:  # 到达最终目标
+                    self.stay_time_remaining = duration
+                    self.position = self.buildings[target_building]
+                else:  # 继续下一段路径
+                    self.move_start_time = current_time
+            if not self.current_path:
+                self.current_path = self.find_shortest_path(self.position, self.buildings[target_building])
+                if self.current_path:
+                    self.move_start_time = current_time 
+            # 如果还没到达目标建筑物，需要寻路
+            if not self.current_path:
+                self.current_path = self.find_shortest_path(self.position, self.buildings[target_building])
+                if self.current_path:
+                    self.move_start_time = current_time
+                    
+            # 在路上移动
+            if self.current_path:
+                current_path = self.current_path[0]
+                progress = min(1.0, (current_time - self.move_start_time) / current_path.time_cost)
+                
+                # 更新位置
                 self.position = Point(
-                    path.start.x + (path.end.x - path.start.x) * smooth_step(progress),
-                    path.start.y + (path.end.y - path.start.y) * smooth_step(progress)
+                    current_path.start.x + (current_path.end.x - current_path.start.x) * smooth_step(progress),
+                    current_path.start.y + (current_path.end.y - current_path.start.y) * smooth_step(progress)
                 )
+                
+                # 如果到达当前路径终点
                 if progress >= 1.0:
-                    self.current_path.pop(0)  # 到达当前路径终点
-                    if not self.current_path:
-                        # 准备查找下一个活动的路径
-                        print(f"{self.name} 到达 {path.end}，准备查找下一活动")
-                        self.current_schedule_index += 1
-                        if self.current_schedule_index < len(self.schedule):
-                            next_scheduled_building = self.schedule[self.current_schedule_index][2]
-                            self.current_path = self.find_shortest_path(self.position, self.buildings[next_scheduled_building])
-                            if self.current_path:
-                                self.move_start_time = current_time
-                                self.stay_time_remaining = self.schedule[self.current_schedule_index][3]  # 下一个活动的停留时间
-
-
+                    self.current_path.pop(0)
+                    if not self.current_path:  # 到达最终目标
+                        self.stay_time_remaining = duration
+                        self.position = self.buildings[target_building]
+                    else:  # 继续下一段路径
+                        self.move_start_time = current_time
     def draw(self, config: GameConfig):
         """绘制学生"""
         if self.position:
@@ -301,7 +262,6 @@ class Game:
         self.load_data()
 
     def load_data(self):
-        """从JSON加载数据"""
         try:
             with open('data.json', 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -310,12 +270,15 @@ class Game:
                     class_name = class_info['class_name']
                     content = class_info['content'].split('-')
                     schedule = []
-                    for i in range(0, len(content), 2):
-                        activity_name = content[i]
+                    for activity_name in content:
                         building_name = None
+                        start_time, end_time, time_cost = None, None, None
                         for subject in data.get('subjects', []):
                             if subject['name'] == activity_name:
                                 building_name = subject['building']
+                                start_time = subject['start_time']
+                                end_time = subject['end_time']
+                                time_cost = subject['time_cost']
                                 break
                         if building_name:
                             start_time = subject['start_time']
@@ -363,7 +326,7 @@ class Game:
             student.update_position(self.virtual_time)
 
     def draw_buildings(self):
-        # """绘制建筑物及其名称"""
+        """绘制建筑物及其名称"""
         for building_name, point in self.buildings.items():
             screen_coords = point.to_screen_coords(self.config.bg_width, self.config.bg_height)
             pygame.draw.rect(self.screen, BLACK, (screen_coords[0] - BUILDING_POINT_RADIUS, screen_coords[1] - BUILDING_POINT_RADIUS, BUILDING_POINT_RADIUS * 2, BUILDING_POINT_RADIUS * 2))
