@@ -1,3 +1,5 @@
+
+from sched import scheduler
 import pygame
 import json
 import time
@@ -5,7 +7,7 @@ from dataclasses import dataclass
 from typing import Tuple, List, Dict, Optional
 import heapq
 import random
-
+import datetime
 # 常量配置
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 700
@@ -23,8 +25,8 @@ WHITE = (255, 255, 255)
 ORANGE = (190, 0, 200)
 
 # 虚拟时间初始设定
-VIRTUAL_START_HOUR = 21  # 学生晚上9:30
-VIRTUAL_START_MINUTE = 30
+VIRTUAL_START_HOUR = 7  
+VIRTUAL_START_MINUTE = 4
 VIRTUAL_START_SECOND = 0
 
 
@@ -65,35 +67,41 @@ class Path:
 
 
 class Student:
-    def __init__(self, student_id: int, name: str, class_name: str, dormitory: str, buildings: Dict[str, Point], paths: List[Path]):
+    def __init__(self, student_id: int, name: str, class_name: str, dormitory: str, buildings: Dict[str, Point], paths: List[Path], schedule: List[Tuple[str, str, str, int]]):
         self.id = student_id
         self.name = name
+        self.stay_time_remaining = 0  
         self.class_name = class_name
         self.dormitory = dormitory
         self.buildings = buildings
         self.paths = paths
-        self.schedule: List[Tuple[int, int, str, int]] = []  # (小时, 分钟, 地点, 花费时间)
-        self.position: Optional[Point] = buildings[dormitory]  # 初始化位置为宿舍
-        self.current_time: int = VIRTUAL_START_HOUR * 3600 + VIRTUAL_START_MINUTE * 60 + VIRTUAL_START_SECOND  # 初始化虚拟时间
+        self.schedule: List[Tuple[str, str, str, int]] = []
+        self.position: Optional[Point] = buildings[dormitory]
+        self.current_time: int = VIRTUAL_START_HOUR * 3600 + VIRTUAL_START_MINUTE * 60 + VIRTUAL_START_SECOND
         self.current_schedule_index: int = 0
-        self.current_path: List[Path] = []  # 当前路径
+        self.current_path: List[Path] = []
         self.move_start_time: Optional[float] = None
-        self.generate_schedule()
+        self.set_schedule(schedule)  # 调用设置日程方法
 
-    def generate_schedule(self):
-        """生成日常活动安排"""
-        self.schedule = [
-            (7, 0, random.choice(["CanteenD5", "CanteenF5", "MD"]), 20),  # 三个地方任选其一
-            (8, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 100),  # 第一节课
-            (10, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 60),  # 第二节课
-            (11, 40, random.choice(["CanteenD5", "CanteenF5", "MD"]), 20),  # 午餐
-            (12, 0, self.dormitory, 60),  # 回宿舍
-            (14, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 100),  # 第三节课
-            (16, 0, random.choice(["F3a", "F3b", "F3c", "F3d"]), 100),  # 第四节课
-            (18, 0, random.choice(["CanteenD5", "CanteenF5", "MD"]), 20),  # 晚餐
-            (20, 30, self.dormitory, 30)  # 返回宿舍
-        ]
+    def set_schedule(self, schedule: List[Tuple[str, str, str, int]]):
+        """根据传入的日程信息设置学生日程安排"""
+        for activity in schedule:
+            start_time = activity[0]
+            end_time = activity[1]
+            building_name = activity[2]
+            time_cost = activity[3]
 
+            # 获取当天0点时间，这里假设都为当年的1月1日
+            current_year = datetime.datetime.now().year
+            base_datetime = datetime.datetime(current_year, 1, 1)
+
+            start_time_obj = datetime.datetime.strptime(start_time, '%H:%M').time()
+            end_time_obj = datetime.datetime.strptime(end_time, '%H:%M').time()
+
+            start_timestamp = (datetime.datetime.combine(base_datetime.date(), start_time_obj) - base_datetime).total_seconds()
+            end_timestamp = (datetime.datetime.combine(base_datetime.date(), end_time_obj) - base_datetime).total_seconds()
+
+            self.schedule.append((start_timestamp, end_timestamp, building_name, time_cost))    
     def find_shortest_path(self, start: Point, end: Point) -> List[Path]:
         if start == end:
             return []
@@ -124,37 +132,51 @@ class Student:
     def update_position(self, current_time: float):
         """更新学生位置"""
         if self.current_schedule_index < len(self.schedule):
-            scheduled_time = self.schedule[self.current_schedule_index]
-            scheduled_hour = scheduled_time[0]
-            scheduled_minute = scheduled_time[1]
-            scheduled_building = scheduled_time[2]
-            duration = scheduled_time[3]
-
-            scheduled_timestamp = scheduled_hour * 3600 + scheduled_minute * 60
-
-            # 检查是否达到了计划时间并找到路径
-            if current_time >= scheduled_timestamp:
-                if not self.current_path:  # 如果没有当前路径，开始寻找新路径
+            scheduled_start_time = self.schedule[self.current_schedule_index][0]
+            scheduled_end_time = self.schedule[self.current_schedule_index][1]
+            scheduled_building = self.schedule[self.current_schedule_index][2]
+            duration = self.schedule[self.current_schedule_index][3]
+            print(f"当前学生 {self.name}，当前虚拟时间: {current_time}，活动开始时间: {scheduled_start_time}，活动结束时间: {scheduled_end_time}")
+            if current_time < scheduled_start_time:
+                # 如果还没到活动开始时间，保持等待（不做任何操作）
+                return
+            elif current_time >= scheduled_start_time and current_time < scheduled_end_time:
+                # 在活动时间范围内，如果不在停留状态，尝试寻找路径并开始停留
+                if self.stay_time_remaining == 0:
                     self.current_path = self.find_shortest_path(self.position, self.buildings[scheduled_building])
                     if self.current_path:
-                        self.move_start_time = current_time  # 记录移动开始时间
+                        self.move_start_time = current_time
+                        self.stay_time_remaining = duration
+                else:
+                    # 处于停留状态，停留时间减1秒
+                    print(f"当前学生 {self.name}，当前虚拟时间: {current_time}，活动开始时间: {scheduled_start_time}，活动结束时间: {scheduled_end_time}")
+                    self.stay_time_remaining -= 1
+                    if self.stay_time_remaining == 0:
+                        # 停留结束，如果还没到结束时间，重新寻找路径进入停留（应对路径变化等情况）
+                        if current_time < scheduled_end_time:
+                            self.current_path = self.find_shortest_path(self.position, self.buildings[scheduled_building])
+                            if self.current_path:
+                                self.move_start_time = current_time
+                                self.stay_time_remaining = duration
+            else:
+                # 当前时间超过了活动结束时间，进入下一个活动.
+                print(f"当前学生 {self.name}，当前虚拟时间: {current_time}，活动开始时间: {scheduled_start_time}，活动结束时间: {scheduled_end_time}")
+                self.current_schedule_index += 1
+                self.current_path = []
+                self.stay_time_remaining = 0
 
-                # 移动逻辑
-                if self.current_path:  # 只在有路径时更新位置
-                    path = self.current_path[0]  # 当前路径段
-                    progress = min(1.0, (current_time - self.move_start_time) / path.time_cost)
-
-                    # 更新位置
-                    self.position = Point(
-                        path.start.x + (path.end.x - path.start.x) * smooth_step(progress),
-                        path.start.y + (path.end.y - path.start.y) * smooth_step(progress)
-                    )
-
-                    if progress >= 1.0:  # 如果当前路径段已完成
-                        self.current_path.pop(0)  # 移除已完成的路径段
-                        if not self.current_path:  # 如果路径段已全部完成
-                            self.current_schedule_index += 1  # 进行下一个活动
-
+            # 移动逻辑（如果有路径的话）
+            if self.current_path:
+                path = self.current_path[0]
+                progress = min(1.0, (current_time - self.move_start_time) / path.time_cost)
+                self.position = Point(
+                    path.start.x + (path.end.x - path.start.x) * smooth_step(progress),
+                    path.start.y + (path.end.y - path.start.y) * smooth_step(progress)
+                )
+                if progress >= 1.0:
+                    self.current_path.pop(0)
+                    if not self.current_path:
+                        self.current_schedule_index += 1
     def draw(self, config: GameConfig):
         """绘制学生"""
         if self.position:
@@ -193,6 +215,25 @@ class Game:
         try:
             with open('data.json', 'r', encoding='utf-8') as f:
                 data = json.load(f)
+                class_schedules = {}
+                for class_info in data.get('class', []):
+                    class_name = class_info['class_name']
+                    content = class_info['content'].split('-')
+                    schedule = []
+                    for i in range(0, len(content), 2):
+                        activity_name = content[i]
+                        building_name = None
+                        for subject in data.get('subjects', []):
+                            if subject['name'] == activity_name:
+                                building_name = subject['building']
+                                break
+                        if building_name:
+                            start_time = subject['start_time']
+                            end_time = subject['end_time']
+                            time_cost = subject['time_cost']
+                            schedule.append((start_time, end_time, building_name, time_cost))
+                    class_schedules[class_name] = schedule
+
                 for building_data in data.get('buildings', []):
                     coordinates = Point(building_data['coordinates'][0], building_data['coordinates'][1])
                     self.buildings[building_data['name']] = coordinates
@@ -204,19 +245,20 @@ class Game:
                         path_data['length'], path_data['time_cost']
                     ))
                 for student_data in data.get('students', []):
+                    student_schedule = class_schedules.get(student_data['class_name'], [])
                     student = Student(
                         student_data['id'],
                         student_data['name'],
                         student_data['class_name'],
                         student_data['dormitory'],
                         self.buildings,
-                        self.paths
+                        self.paths,
+                        student_schedule
                     )
                     self.students.append(student)
 
         except FileNotFoundError:
             print("数据文件未找到")
-
     def handle_events(self):
         """处理事件"""
         for event in pygame.event.get():
@@ -242,7 +284,10 @@ class Game:
 
     def draw_time(self):
         """显示当前虚拟时间"""
-        time_str = time.strftime("%H:%M:%S", time.localtime(self.virtual_time))
+        # 根据虚拟时间的秒数创建一个datetime对象，假设初始日期为当年1月1日
+        current_year = datetime.datetime.now().year
+        virtual_datetime = datetime.datetime.fromtimestamp(self.virtual_time, tz=datetime.timezone.utc).replace(year=current_year, month=1, day=1)
+        time_str = virtual_datetime.strftime("%H:%M:%S")
         text = self.font.render(time_str, True, YELLOW)
         text_rect = text.get_rect(topleft=(SCREEN_WIDTH - 150, 20))
         pygame.draw.rect(self.screen, BLACK, text_rect)  # 黑色背景框

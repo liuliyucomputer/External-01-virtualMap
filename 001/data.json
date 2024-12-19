@@ -783,16 +783,27 @@
         {
             "id": 2,
             "name": "英语",
+<<<<<<< HEAD:001/data.json
             "start_time": "7:07",
             "end_time": "7:08",
+=======
+            "start_time": "10:00",
+            "end_time": "11:40",
+>>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
             "building": "F3d",
             "time_cost": 6000
         },
          {
             "id": 3,
+<<<<<<< HEAD:001/data.json
             "name": "F3a",
             "start_time": "7:06",
             "end_time": "7:08",
+=======
+            "name": "实验",
+            "start_time": "08:00",
+            "end_time": "09:40",
+>>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
             "building": "F3a",
             "time_cost": 6000
         },
@@ -839,8 +850,13 @@
         {
             "id": 9,
             "name": "食堂Dam",
+<<<<<<< HEAD:001/data.json
             "start_time": "7:05",
             "end_time": "7:06",
+=======
+            "start_time": "7:15",
+            "end_time": "7:16",
+>>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
             "building": "CanteenD5",
             "time_cost": 60
         },
@@ -883,6 +899,7 @@
             "end_time": "18:45",
             "building": "MD",
             "time_cost": 1800
+<<<<<<< HEAD:001/data.json
         },
         {
             "id": 16,
@@ -939,6 +956,8 @@
             "end_time": "7:00",
             "building": "F3",
             "time_cost": 32400
+=======
+>>>>>>> 889637ba652020f6cfbc1f5ddea4db86906fca8e:data.json
         }
     ],
     "class": [
